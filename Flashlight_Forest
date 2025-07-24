@@ -1,0 +1,54 @@
+from cmu_graphics import *
+
+class moveableCharacter():
+    def __init__(self, cx, cy, dx = 0, dy = 0, r = 5):
+        self.cx = cx
+        self.cy = cy
+        self.dx = dx
+        self.dy = dy
+        self.r = r
+
+def onAppStart(app):
+    app.player = moveableCharacter(200, 200)
+
+def redrawAll(app):
+    drawCircle(app.player.cx, app.player.cy, app.player.r)
+
+
+def onKeyHold(app, key):
+    if 'w' in key:
+        app.player.dy = -1
+    if 's' in key:
+        app.player.dy = 1
+    if 'w' in key and 's' in key:
+        app.player.dy = 0
+    if 'a' in key:
+        app.player.dx = -1
+    if 'd' in key:
+        app.player.dx = 1
+    if 'a' in key and 'd' in key:
+        app.player.dx = 0
+
+def onKeyRelease(app, key):
+    if key == 'w' or key == 's':
+        app.player.dy = 0
+    if key == 'a' or key == 'd':
+        app.player.dx = 0
+
+def onStep(app):
+    movementCoefficient = 5
+    app.player.cy += app.player.dy * movementCoefficient
+    app.player.cx += app.player.dx * movementCoefficient
+    if app.player.cy + app.player.r > app.height:
+        app.player.cy = app.height - app.player.r
+    if app.player.cx + app.player.r > app.width:
+        app.player.cx = app.width - app.player.r
+    if app.player.cy - app.player.r < 0:
+        app.player.cy = app.player.r
+    if app.player.cx - app.player.r < 0:
+        app.player.cx = app.player.r
+
+def main():
+    runApp()
+    
+main()
