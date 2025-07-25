@@ -19,7 +19,6 @@ def onAppStart(app):
     app.boardTop = 75
     app.boardWidth = 300
     app.boardHeight = 300
-    app.cellBorderWidth = 0.5
     resetBoard(app)
 
 def resetBoard(app):
@@ -49,7 +48,6 @@ def redrawAll(app):
     #Draw the board
     drawLabel('Flashlight Forest', 200, 30)
     drawBoard(app)
-    drawBoardBorder(app)
     #Draw the player
     drawCircle(app.player.cx, app.player.cy, app.player.r)
 
@@ -104,8 +102,7 @@ def drawCell(app, row, col):
     cellLeft, cellTop = getCellLeftTop(app, row, col)
     cellWidth, cellHeight = getCellSize(app)
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
-             fill=app.cellColors[row][col], border='black',
-             borderWidth=app.cellBorderWidth)
+             fill=app.cellColors[row][col])
 
 def getCellLeftTop(app, row, col):
     cellWidth, cellHeight = getCellSize(app)
@@ -121,7 +118,7 @@ def getCellSize(app):
 #Process source: https://www.roguebasin.com/index.php/Basic_BSP_Dungeon_generation
 def createDungeon(grid):
     rows, cols = len(grid), len(grid[0])
-    borderDistance = 2
+    borderDistance = random.randint(2, 4)
     if len(grid) > 2 * borderDistance and len(grid[0]) > 2 * borderDistance:
         randomDir = random.choice(['vertical', 'horizontal'])
     elif len(grid) > 2 * borderDistance:
@@ -139,16 +136,35 @@ def createDungeon(grid):
                 randomCol = borderDistance
             else:
                 randomCol = random.randint(borderDistance, len(grid[0]) - borderDistance - 1)
+            #split board into sections
+            gridLeft = []
+            gridReplace = []
+            gridRight = []
+            randomPath = random.randint(0, rows-2)
             for row in range(rows):
-                grid[row][randomCol] = 'green'
+                gridLeft.append(grid[row][:randomCol])
+                if row == randomPath or row == randomPath + 1: 
+                    gridReplace.append([None])
+                else:
+                    gridReplace.append(['green'])
+                gridRight.append(grid[row][randomCol + 1:])
+            newGridLeft = createDungeon(gridLeft)
+            newGridRight = createDungeon(gridRight)
+            for row in range(rows): #recursively recreate the board
+                grid[row] = newGridLeft[row] + gridReplace[row] + newGridRight[row]
         else: #draw horizontal border
             if borderDistance == len(grid[0]) - borderDistance - 1:
                 randomRow = borderDistance
             else:
                 randomRow = random.randint(borderDistance, len(grid) - borderDistance - 1)
-
+            midRow = [['green' for col in range(cols)]]
+            randomPath = random.randint(0, cols-2)
+            midRow[0][randomPath] = None
+            midRow[0][randomPath+1] = None
+            #recursively create the board by splitting it up
             grid = (createDungeon(grid[0:randomRow]) + 
-                    [['green' for col in range(cols)]] + createDungeon(grid[randomRow+1:]))
+                    midRow + createDungeon(grid[randomRow+1:]))
+        print(grid)
         return grid
 
 
