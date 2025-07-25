@@ -1,5 +1,6 @@
 from cmu_graphics import *
 import random
+#Random functions: https://www.w3schools.com/python/module_random.asp
 
 #Player variables
 class moveableCharacter():
@@ -11,12 +12,9 @@ class moveableCharacter():
         self.r = r
         
 def onAppStart(app):
-    #Player variables
-    app.player = moveableCharacter(200, 200)
-    app.movementCoefficient = 3
     #Board variables
-    app.rows = 20
-    app.cols = 20
+    app.rows = 10
+    app.cols = 10
     app.boardLeft = 50
     app.boardTop = 75
     app.boardWidth = 300
@@ -25,6 +23,10 @@ def onAppStart(app):
     resetBoard(app)
 
 def resetBoard(app):
+    #Player variables
+    app.player = moveableCharacter(200, 200)
+    app.movementCoefficient = 3
+    #Create board
     app.cellColors = [[None for col in range(app.cols)] for row in range(app.rows)]
     fillBorders(app)
     gridCenter = []
@@ -44,12 +46,12 @@ def fillBorders(app):
             app.cellColors[row][edgeCol] = 'green'
 
 def redrawAll(app):
-    #Draw the player
-    drawCircle(app.player.cx, app.player.cy, app.player.r)
     #Draw the board
     drawLabel('Flashlight Forest', 200, 30)
     drawBoard(app)
     drawBoardBorder(app)
+    #Draw the player
+    drawCircle(app.player.cx, app.player.cy, app.player.r)
 
 def onKeyPress(app, key):
     if key == 'r':
@@ -119,19 +121,42 @@ def getCellSize(app):
 #Process source: https://www.roguebasin.com/index.php/Basic_BSP_Dungeon_generation
 def createDungeon(grid):
     rows, cols = len(grid), len(grid[0])
-    randomNum = random.randint(0, 1)
     borderDistance = 2
-    if randomNum == 0: #draw vertically
-        randomCol = random.randint(borderDistance, len(grid) - 1 - borderDistance)
-        for row in range(rows):
-            grid[row][randomCol] = 'green'
-    else: #draw horizontally
-        randomRow = random.randint(borderDistance, len(grid[0]) - 1 - borderDistance)
-        grid[randomRow] = ['green' for col in range(cols)]
+    if len(grid) > 2 * borderDistance and len(grid[0]) > 2 * borderDistance:
+        randomDir = random.choice(['vertical', 'horizontal'])
+    elif len(grid) > 2 * borderDistance:
+        randomDir = 'horizontal'
+    elif len(grid[0]) > 2 * borderDistance:
+        randomDir = 'vertical'
+    else:
+        randomDir = 'None'
+    
+    if randomDir == 'None':
+        return grid
+    else:
+        if randomDir == 'vertical':
+            if (False): #basecase
+                pass
+            else: #recursivecase
+                if borderDistance == len(grid) - borderDistance - 1:
+                    randomCol = borderDistance
+                else:
+                    randomCol = random.randint(borderDistance, len(grid) - borderDistance - 1)
+                for row in range(rows):
+                    grid[row][randomCol] = 'green'
+        else: #draw horizontally
+            if (False): #basecase
+                pass
+            else: #recursivecase
+                if borderDistance == len(grid[0]) - borderDistance - 1:
+                    randomRow = borderDistance
+                else:
+                    randomRow = random.randint(borderDistance, len(grid[0]) - borderDistance - 1)
+                grid[randomRow] = ['green' for col in range(cols)]
 
-        #newGrid = createDungeon(grid[0:randomRow]) + ['green' for col in range(cols)] + createDungeon(grid[randomRow+1:])
+            #newGrid = createDungeon(grid[0:randomRow]) + ['green' for col in range(cols)] + createDungeon(grid[randomRow+1:])
         #return newGrid
-    return grid
+        return grid
 
 
 def main():
