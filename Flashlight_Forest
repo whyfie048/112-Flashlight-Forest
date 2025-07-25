@@ -13,8 +13,8 @@ class moveableCharacter():
         
 def onAppStart(app):
     #Board variables
-    app.rows = 10
-    app.cols = 10
+    app.rows = 20
+    app.cols = 20
     app.boardLeft = 50
     app.boardTop = 75
     app.boardWidth = 300
@@ -131,31 +131,24 @@ def createDungeon(grid):
     else:
         randomDir = 'None'
     
-    if randomDir == 'None':
+    if randomDir == 'None': #basecase
         return grid
-    else:
-        if randomDir == 'vertical':
-            if (False): #basecase
-                pass
-            else: #recursivecase
-                if borderDistance == len(grid) - borderDistance - 1:
-                    randomCol = borderDistance
-                else:
-                    randomCol = random.randint(borderDistance, len(grid) - borderDistance - 1)
-                for row in range(rows):
-                    grid[row][randomCol] = 'green'
-        else: #draw horizontally
-            if (False): #basecase
-                pass
-            else: #recursivecase
-                if borderDistance == len(grid[0]) - borderDistance - 1:
-                    randomRow = borderDistance
-                else:
-                    randomRow = random.randint(borderDistance, len(grid[0]) - borderDistance - 1)
-                grid[randomRow] = ['green' for col in range(cols)]
+    else: #recursivecase
+        if randomDir == 'vertical': #draw vertical border
+            if borderDistance == len(grid) - borderDistance - 1:
+                randomCol = borderDistance
+            else:
+                randomCol = random.randint(borderDistance, len(grid[0]) - borderDistance - 1)
+            for row in range(rows):
+                grid[row][randomCol] = 'green'
+        else: #draw horizontal border
+            if borderDistance == len(grid[0]) - borderDistance - 1:
+                randomRow = borderDistance
+            else:
+                randomRow = random.randint(borderDistance, len(grid) - borderDistance - 1)
 
-            #newGrid = createDungeon(grid[0:randomRow]) + ['green' for col in range(cols)] + createDungeon(grid[randomRow+1:])
-        #return newGrid
+            grid = (createDungeon(grid[0:randomRow]) + 
+                    [['green' for col in range(cols)]] + createDungeon(grid[randomRow+1:]))
         return grid
 
 
