@@ -1,4 +1,5 @@
 from cmu_graphics import *
+import random
 
 #Player variables
 class moveableCharacter():
@@ -9,28 +10,50 @@ class moveableCharacter():
         self.dy = dy
         self.r = r
         
-
 def onAppStart(app):
     #Player variables
     app.player = moveableCharacter(200, 200)
     app.movementCoefficient = 3
     #Board variables
-    app.rows = 15
-    app.cols = 15
+    app.rows = 20
+    app.cols = 20
     app.boardLeft = 50
     app.boardTop = 75
     app.boardWidth = 300
     app.boardHeight = 300
     app.cellBorderWidth = 0.5
+    resetBoard(app)
+
+def resetBoard(app):
+    app.cellColors = [[None for col in range(app.cols)] for row in range(app.rows)]
+    fillBorders(app)
+    gridCenter = []
+    #finding center of board excluding the border
+    for row in range(1, app.rows - 1):
+        gridCenter += [app.cellColors[row][1:-1]]
+    #remake the board with the newly created dungeon
+    filledCenter = createDungeon(gridCenter)
+    for row in range(1, app.rows - 1):
+        app.cellColors[row] = [app.cellColors[row][0]] + filledCenter[row - 1] + [app.cellColors[row][-1]]
+
+def fillBorders(app):
+    for edgeRow in [0, app.rows-1]:
+        app.cellColors[edgeRow] = ['green' for col in range(app.cols)]
+    for edgeCol in [0, app.cols-1]:
+        for row in range(app.rows):
+            app.cellColors[row][edgeCol] = 'green'
 
 def redrawAll(app):
     #Draw the player
     drawCircle(app.player.cx, app.player.cy, app.player.r)
     #Draw the board
-    drawLabel('Our second 2d board (this works!)', 200, 30, size=16)
+    drawLabel('Flashlight Forest', 200, 30)
     drawBoard(app)
     drawBoardBorder(app)
 
+def onKeyPress(app, key):
+    if key == 'r':
+        resetBoard(app)
 
 def onKeyHold(app, key):
     if 'w' in key:
@@ -79,7 +102,7 @@ def drawCell(app, row, col):
     cellLeft, cellTop = getCellLeftTop(app, row, col)
     cellWidth, cellHeight = getCellSize(app)
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
-             fill=None, border='black',
+             fill=app.cellColors[row][col], border='black',
              borderWidth=app.cellBorderWidth)
 
 def getCellLeftTop(app, row, col):
@@ -92,6 +115,24 @@ def getCellSize(app):
     cellWidth = app.boardWidth / app.cols
     cellHeight = app.boardHeight / app.rows
     return (cellWidth, cellHeight)
+
+#Process source: https://www.roguebasin.com/index.php/Basic_BSP_Dungeon_generation
+def createDungeon(grid):
+    rows, cols = len(grid), len(grid[0])
+    randomNum = random.randint(0, 1)
+    borderDistance = 2
+    if randomNum == 0: #draw vertically
+        randomCol = random.randint(borderDistance, len(grid) - 1 - borderDistance)
+        for row in range(rows):
+            grid[row][randomCol] = 'green'
+    else: #draw horizontally
+        randomRow = random.randint(borderDistance, len(grid[0]) - 1 - borderDistance)
+        grid[randomRow] = ['green' for col in range(cols)]
+
+        #newGrid = createDungeon(grid[0:randomRow]) + ['green' for col in range(cols)] + createDungeon(grid[randomRow+1:])
+        #return newGrid
+    return grid
+
 
 def main():
     runApp()
