@@ -4,7 +4,7 @@ import random
 
 #Player variables
 class moveableCharacter():
-    def __init__(self, cx, cy, dx = 0, dy = 0, r = 5):
+    def __init__(self, cx, cy, r, dx = 0, dy = 0):
         self.cx = cx
         self.cy = cy
         self.dx = dx
@@ -13,8 +13,8 @@ class moveableCharacter():
         
 def onAppStart(app):
     #Board variables
-    app.rows = 20
-    app.cols = 20
+    app.rows = 21
+    app.cols = 21
     app.boardLeft = 50
     app.boardTop = 75
     app.boardWidth = 300
@@ -23,7 +23,9 @@ def onAppStart(app):
 
 def resetBoard(app):
     #Player variables
-    app.player = moveableCharacter(200, 200)
+    cellWidth, cellHeight = getCellSize(app)
+    radius = min(cellWidth, cellHeight) // 4
+    app.player = moveableCharacter(app.boardLeft + (cellWidth) * (app.cols // 2 + 0.5), app.boardTop + (cellHeight) * (app.rows // 2 + 0.5), radius)
     app.movementCoefficient = 3
     #Create board
     app.cellColors = [[None for col in range(app.cols)] for row in range(app.rows)]
@@ -36,6 +38,7 @@ def resetBoard(app):
     filledCenter = createDungeon(gridCenter)
     for row in range(1, app.rows - 1):
         app.cellColors[row] = [app.cellColors[row][0]] + filledCenter[row - 1] + [app.cellColors[row][-1]]
+    app.cellColors[app.rows//2][app.cols//2] = None
 
 def fillBorders(app):
     for edgeRow in [0, app.rows-1]:
@@ -164,7 +167,6 @@ def createDungeon(grid):
             #recursively create the board by splitting it up
             grid = (createDungeon(grid[0:randomRow]) + 
                     midRow + createDungeon(grid[randomRow+1:]))
-        print(grid)
         return grid
 
 
