@@ -13,8 +13,8 @@ class moveableCharacter():
         
 def onAppStart(app):
     #Board variables
-    app.rows = 21
-    app.cols = 21
+    app.rows = 20
+    app.cols = 20
     app.boardLeft = 50
     app.boardTop = 75
     app.boardWidth = 300
@@ -79,16 +79,23 @@ def onKeyRelease(app, key):
         app.player.dx = 0
 
 def onStep(app):
+    #Move the player
     app.player.cy += app.player.dy * app.movementCoefficient
     app.player.cx += app.player.dx * app.movementCoefficient
-    if app.player.cy + app.player.r > app.height:
-        app.player.cy = app.height - app.player.r
-    if app.player.cx + app.player.r > app.width:
-        app.player.cx = app.width - app.player.r
-    if app.player.cy - app.player.r < 0:
-        app.player.cy = app.player.r
-    if app.player.cx - app.player.r < 0:
-        app.player.cx = app.player.r
+    #Boundary Checks
+    collisionFound = False
+    for row in range(app.rows):
+        for col in range(app.cols):
+            if app.cellColors[row][col] == 'green':
+                rectLeftX, rectTopY = getCellLeftTop(app, row, col)
+                rectWidth, rectHeight = getCellSize(app)
+                if checkCollisions(app.player, rectLeftX, rectTopY, rectWidth, rectHeight):
+                    app.player.cy -= app.player.dy * app.movementCoefficient
+                    app.player.cx -= app.player.dx * app.movementCoefficient
+                    collisionFound = True
+                    break
+        if collisionFound == True:
+            break
 
 def drawBoard(app):
     for row in range(app.rows):
@@ -168,8 +175,24 @@ def createDungeon(grid):
             grid = (createDungeon(grid[0:randomRow]) + 
                     midRow + createDungeon(grid[randomRow+1:]))
         return grid
+#Concept from: https://gamedev.stackexchange.com/questions/179635/circle-square-collision-detection-simple-formula
+def checkCollisions(player, rectLeftX, rectTopY, rectWidth, rectHeight):
+    circleRadius = player.r
+    shapeCorners = [(rectLeftX, rectTopY - circleRadius), (rectLeftX + rectWidth, rectTopY - circleRadius),
+                    (rectLeftX + rectWidth + circleRadius, rectTopY), 
+                    (rectLeftX + rectWidth + circleRadius, rectTopY + rectHeight),
+                    (rectLeftX + rectWidth, rectTopY + rectHeight + circleRadius),
+                    (rectLeftX, rectTopY + rectHeight + circleRadius),
+                    (rectLeftX - circleRadius, rectTopY + rectHeight),
+                    (rectLeftX - circleRadius, rectTopY)]
+    circleCenterX, circleCenterY = player.cx, player.cy
+    #Check top portion collisions
 
-
+    #Check middle portion collisions
+    if (shapeCorners[7][0] <= circleCenterX <= shapeCorners[2][0]
+        and rectTopY <= circleCenterY <= rectTopY + rectHeight):
+        return True
+    return False
 def main():
     runApp()
     
