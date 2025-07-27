@@ -1,6 +1,8 @@
 from cmu_graphics import *
 import random
 #Random functions: https://www.w3schools.com/python/module_random.asp
+import math
+#Math functions: https://docs.python.org/3/library/math.html
 
 #Player variables
 class moveableCharacter():
@@ -19,46 +21,59 @@ def onAppStart(app):
     app.boardTop = 75
     app.boardWidth = 300
     app.boardHeight = 300
+    app.maxRayLength = 100
     resetBoard(app)
+    resetFlashlight(app)
 
 def resetBoard(app):
     #Player variables
     cellWidth, cellHeight = getCellSize(app)
     radius = min(cellWidth, cellHeight) / 4
-    app.player = moveableCharacter(app.boardLeft + (cellWidth) * (app.cols // 2 + 0.5), app.boardTop + (cellHeight) * (app.rows // 2 + 0.5), radius)
+    app.player = moveableCharacter(app.boardLeft + (cellWidth) * 
+                                    (app.cols // 2 + 0.5), app.boardTop + (cellHeight)
+                                     * (app.rows // 2 + 0.5), radius)
     app.movementCoefficient = 3
     #Create board
     app.cellColors = [[None for col in range(app.cols)] for row in range(app.rows)]
+    app.startingAngle = -120
     fillBorders(app)
-    gridCenter = []
-    #finding center of board excluding the border
-    for row in range(1, app.rows - 1):
-        gridCenter += [app.cellColors[row][1:-1]]
-    #remake the board with the newly created dungeon
-    filledCenter = createDungeon(gridCenter)
-    for row in range(1, app.rows - 1):
-        app.cellColors[row] = [app.cellColors[row][0]] + filledCenter[row - 1] + [app.cellColors[row][-1]]
-    app.cellColors[app.rows//2][app.cols//2] = None
+    fillBoard(app)
 
-def fillBorders(app):
-    for edgeRow in [0, app.rows-1]:
-        app.cellColors[edgeRow] = ['green' for col in range(app.cols)]
-    for edgeCol in [0, app.cols-1]:
-        for row in range(app.rows):
-            app.cellColors[row][edgeCol] = 'green'
+def resetFlashlight(app):
+    app.flashlightColors = [[None for col in range(app.cols)] for row in range(app.rows)]
 
-def redrawAll(app):
+def map_redrawAll(app):
     #Draw the board
     drawLabel('Flashlight Forest', 200, 30)
-    drawBoard(app)
+    map_drawBoard(app)
     #Draw the player
-    drawCircle(app.player.cx, app.player.cy, app.player.r)
+    drawCircle(app.player.cx, app.player.cy, app.player.r, fill = 'white', border = 'black')
+    drawAllRays(app, app.maxRayLength, app.startingAngle)
 
-def onKeyPress(app, key):
+def flashlight_redrawAll(app):
+    drawRect(0, 0, app.width, app.height, fill = 'black')
+    drawCircle(app.player.cx, app.player.cy, app.player.r, fill = 'white', border = 'black')
+    drawFlashlight(app, app.maxRayLength, app.startingAngle)
+    flashlight_drawBoard(app)
+    
+
+def map_onKeyPress(app, key):
     if key == 'r':
         resetBoard(app)
+    if key == 'n':
+        setActiveScreen('flashlight')
 
-def onKeyHold(app, key):
+def flashlight_onKeyPress(app, key):
+    if key == 'r':
+        resetBoard(app)
+    if key == 'n':
+        setActiveScreen('map')
+
+def map_onKeyHold(app, key):
+    if 'right' in key:
+        app.startingAngle += 5
+    if 'left' in key:
+        app.startingAngle -= 5 
     if 'w' in key:
         app.player.dy = -1
     if 's' in key:
@@ -72,44 +87,36 @@ def onKeyHold(app, key):
     if 'a' in key and 'd' in key:
         app.player.dx = 0
 
-def onKeyRelease(app, key):
+def flashlight_onKeyHold(app, key):
+    map_onKeyHold(app, key)
+
+def map_onKeyRelease(app, key):
     if key == 'w' or key == 's':
         app.player.dy = 0
     if key == 'a' or key == 'd':
         app.player.dx = 0
 
-def onStep(app):
+def flashlight_onKeyRelease(app, key):
+    map_onKeyRelease(app, key)
+
+def map_onStep(app):
     #Move the player
     app.player.cy += app.player.dy * app.movementCoefficient
     checkBoundaries(app)
 
-def checkBoundaries(app):
-    for row in range(app.rows):
-        for col in range(app.cols):
-            if app.cellColors[row][col] == 'green':
-                rectLeftX, rectTopY = getCellLeftTop(app, row, col)
-                rectWidth, rectHeight = getCellSize(app)
-                isColliding = checkCollisions(app.player, rectLeftX, rectTopY, rectWidth, rectHeight)
-                if isColliding:
-                    if rectLeftX - app.player.r < app.player.cx < rectLeftX + rectWidth + app.player.r:
-                        app.player.cy -= app.player.dy * app.movementCoefficient
-                    break
-    app.player.cx += app.player.dx * app.movementCoefficient
-    for row in range(app.rows):
-        for col in range(app.cols):
-            if app.cellColors[row][col] == 'green':
-                rectLeftX, rectTopY = getCellLeftTop(app, row, col)
-                rectWidth, rectHeight = getCellSize(app)
-                isColliding = checkCollisions(app.player, rectLeftX, rectTopY, rectWidth, rectHeight)
-                if isColliding:
-                    if rectTopY - app.player.r < app.player.cy <= rectTopY + rectWidth + app.player.r:
-                        app.player.cx -= app.player.dx * app.movementCoefficient
-                    break
+def flashlight_onStep(app):
+    map_onStep(app)
+    editFlashlightBoard(app, app.maxRayLength, app.startingAngle)
 
-def drawBoard(app):
+def map_drawBoard(app):
     for row in range(app.rows):
         for col in range(app.cols):
-            drawCell(app, row, col)
+            map_drawCell(app, row, col)
+
+def flashlight_drawBoard(app):
+    for row in range(app.rows):
+        for col in range(app.cols):
+            flashlight_drawCell(app, row, col)
 
 def drawBoardBorder(app):
   # draw the board outline (with double-thickness):
@@ -117,11 +124,23 @@ def drawBoardBorder(app):
            fill=None, border='black',
            borderWidth=2*app.cellBorderWidth)
 
-def drawCell(app, row, col):
+def map_drawCell(app, row, col):
     cellLeft, cellTop = getCellLeftTop(app, row, col)
     cellWidth, cellHeight = getCellSize(app)
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
              fill=app.cellColors[row][col])
+
+def flashlight_drawCell(app, row, col): 
+    cellLeft, cellTop = getCellLeftTop(app, row, col)
+    cellWidth, cellHeight = getCellSize(app)
+    drawRect(cellLeft, cellTop, cellWidth, cellHeight,
+             fill=app.flashlightColors[row][col])
+
+def getCell(app, x, y):
+    cellWidth, cellHeight = getCellSize(app)
+    cellRow = (y - app.boardTop) // cellHeight
+    cellCol = (x - app.boardLeft) // cellWidth
+    return int(cellRow), int(cellCol)
 
 def getCellLeftTop(app, row, col):
     cellWidth, cellHeight = getCellSize(app)
@@ -133,6 +152,25 @@ def getCellSize(app):
     cellWidth = app.boardWidth / app.cols
     cellHeight = app.boardHeight / app.rows
     return (cellWidth, cellHeight)
+
+def fillBoard(app):
+    gridCenter = []
+    #finding center of board excluding the border
+    for row in range(1, app.rows - 1):
+        gridCenter += [app.cellColors[row][1:-1]]
+    #remake the board with the newly created dungeon
+    filledCenter = createDungeon(gridCenter)
+    for row in range(1, app.rows - 1):
+        app.cellColors[row] = ([app.cellColors[row][0]] + filledCenter[row - 1]
+                                + [app.cellColors[row][-1]])
+    app.cellColors[app.rows//2][app.cols//2] = None
+
+def fillBorders(app):
+    for edgeRow in [0, app.rows-1]:
+        app.cellColors[edgeRow] = ['green' for col in range(app.cols)]
+    for edgeCol in [0, app.cols-1]:
+        for row in range(app.rows):
+            app.cellColors[row][edgeCol] = 'green'
 
 #Process source: https://www.roguebasin.com/index.php/Basic_BSP_Dungeon_generation
 def createDungeon(grid):
@@ -184,9 +222,10 @@ def createDungeon(grid):
             grid = (createDungeon(grid[0:randomRow]) + 
                     midRow + createDungeon(grid[randomRow+1:]))
         return grid
+
 #Concept from: https://gamedev.stackexchange.com/questions/179635/circle-square-collision-detection-simple-formula
-def checkCollisions(player, rectLeftX, rectTopY, rectWidth, rectHeight):
-    circleRadius = player.r
+def checkCollisions(circleCenterX, circleCenterY, circleRadius,
+                     rectLeftX, rectTopY, rectWidth, rectHeight):
     shapeCorners = [(rectLeftX, rectTopY - circleRadius), (rectLeftX + rectWidth, rectTopY - circleRadius),
                     (rectLeftX + rectWidth + circleRadius, rectTopY), 
                     (rectLeftX + rectWidth + circleRadius, rectTopY + rectHeight),
@@ -194,7 +233,6 @@ def checkCollisions(player, rectLeftX, rectTopY, rectWidth, rectHeight):
                     (rectLeftX, rectTopY + rectHeight + circleRadius),
                     (rectLeftX - circleRadius, rectTopY + rectHeight),
                     (rectLeftX - circleRadius, rectTopY)]
-    circleCenterX, circleCenterY = player.cx, player.cy
     #Check corner collisions
     for cornerX, cornerY in [(rectLeftX, rectTopY),(rectLeftX + rectWidth, rectTopY),
                              (rectLeftX, rectTopY+rectHeight),
@@ -211,10 +249,65 @@ def checkCollisions(player, rectLeftX, rectTopY, rectWidth, rectHeight):
         return True
     return False
 
+def checkBoundaries(app):
+    #Double for-loops allow for sliding along walls
+    for row in range(app.rows):
+        for col in range(app.cols):
+            if app.cellColors[row][col] == 'green':
+                rectLeftX, rectTopY = getCellLeftTop(app, row, col)
+                rectWidth, rectHeight = getCellSize(app)
+                isColliding = checkCollisions(app.player.cx, app.player.cy, app.player.r,
+                                               rectLeftX, rectTopY, rectWidth, rectHeight)
+                if isColliding:
+                    if rectLeftX - app.player.r < app.player.cx < rectLeftX + rectWidth + app.player.r:
+                        app.player.cy -= app.player.dy * app.movementCoefficient
+                    break
+    app.player.cx += app.player.dx * app.movementCoefficient
+    for row in range(app.rows):
+        for col in range(app.cols):
+            if app.cellColors[row][col] == 'green':
+                rectLeftX, rectTopY = getCellLeftTop(app, row, col)
+                rectWidth, rectHeight = getCellSize(app)
+                isColliding = checkCollisions(app.player.cx, app.player.cy, app.player.r,
+                                               rectLeftX, rectTopY, rectWidth, rectHeight)
+                if isColliding:
+                    if rectTopY - app.player.r < app.player.cy <= rectTopY + rectWidth + app.player.r:
+                        app.player.cx -= app.player.dx * app.movementCoefficient
+                    break
+
+#Raytracing stuff: https://lodev.org/cgtutor/raycasting.html
+def traceLinePoints(app, maxLength, angle):
+    incrementingX, incrementingY = app.player.cx, app.player.cy
+    currentLength = 0
+    cellRow, cellCol = getCell(app, incrementingX, incrementingY)
+    while currentLength < maxLength and app.cellColors[cellRow][cellCol] != 'green':
+        currentLength += 1
+        incrementingX += math.cos(math.radians(angle))
+        incrementingY += math.sin(math.radians(angle))
+        cellRow, cellCol = getCell(app, incrementingX, incrementingY)
+    
+    return incrementingX, incrementingY, cellRow, cellCol
+
+def drawAllRays(app, maxLength, startingAngle, totalAngle = 60):
+    for angle in range(0, totalAngle, totalAngle // 30):
+        newPointX, newPointY, meh, nah = traceLinePoints(app, maxLength, angle + app.startingAngle)
+        drawLine(newPointX, newPointY, app.player.cx, app.player.cy, fill = 'red', lineWidth = 0.25)
+
+def editFlashlightBoard(app, maxLength, startingAngle, totalAngle = 60):
+    resetFlashlight(app)
+    for angle in range(0, totalAngle, totalAngle // 30):
+        newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.startingAngle)
+        if app.cellColors[cellRow][cellCol] != None:
+            app.flashlightColors[cellRow][cellCol] = 'green'
+
+def drawFlashlight(app, maxLength, startingAngle, totalAngle = 60):
+    pass
+
+
 def distance(x1, y1, x2, y2):
     return ((x1-x2)**2 + (y1-y2)**2)**0.5
 
 def main():
-    runApp()
+    runAppWithScreens(initialScreen='map')
     
 main()
