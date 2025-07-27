@@ -301,13 +301,12 @@ def editFlashlightBoard(app, maxLength, startingAngle, totalAngle = 60):
             app.flashlightColors[cellRow][cellCol] = 'green'
 
 def drawFlashlight(app, maxLength, startingAngle, totalAngle = 60):
-    xCoords = [app.player.cx]
-    yCoords = [app.player.cy]
+    coords = [app.player.cx, app.player.cy]
     for angle in range(0, totalAngle, totalAngle // 30):
         newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.startingAngle)
-        xCoords.append(newPointX)
-        yCoords.append(newPointY)
-    drawPolygon(tuple(xCoords), tuple(yCoords))
+        coords.append(newPointX)
+        coords.append(newPointY)
+    drawPolygon(*coords, fill = 'yellow')
 
 
 def distance(x1, y1, x2, y2):
