@@ -60,14 +60,14 @@ def flashlight_redrawAll(app):
 def map_onKeyPress(app, key):
     if key == 'r':
         resetBoard(app)
-    if key == 'n':
+    if key == 'f':
         setActiveScreen('flashlight')
+    if key == 'm':
+        setActiveScreen('map')
 
 def flashlight_onKeyPress(app, key):
-    if key == 'r':
-        resetBoard(app)
-    if key == 'n':
-        setActiveScreen('map')
+    map_onKeyPress(app, key)
+        
 
 def map_onKeyHold(app, key):
     if 'right' in key:
@@ -301,7 +301,13 @@ def editFlashlightBoard(app, maxLength, startingAngle, totalAngle = 60):
             app.flashlightColors[cellRow][cellCol] = 'green'
 
 def drawFlashlight(app, maxLength, startingAngle, totalAngle = 60):
-    pass
+    xCoords = [app.player.cx]
+    yCoords = [app.player.cy]
+    for angle in range(0, totalAngle, totalAngle // 30):
+        newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.startingAngle)
+        xCoords.append(newPointX)
+        yCoords.append(newPointY)
+    drawPolygon(tuple(xCoords), tuple(yCoords))
 
 
 def distance(x1, y1, x2, y2):
