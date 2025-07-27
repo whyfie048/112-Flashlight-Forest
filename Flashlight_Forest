@@ -24,7 +24,7 @@ def onAppStart(app):
 def resetBoard(app):
     #Player variables
     cellWidth, cellHeight = getCellSize(app)
-    radius = min(cellWidth, cellHeight) // 4
+    radius = min(cellWidth, cellHeight) / 4
     app.player = moveableCharacter(app.boardLeft + (cellWidth) * (app.cols // 2 + 0.5), app.boardTop + (cellHeight) * (app.rows // 2 + 0.5), radius)
     app.movementCoefficient = 3
     #Create board
@@ -81,21 +81,30 @@ def onKeyRelease(app, key):
 def onStep(app):
     #Move the player
     app.player.cy += app.player.dy * app.movementCoefficient
-    app.player.cx += app.player.dx * app.movementCoefficient
-    #Boundary Checks
-    collisionFound = False
+    checkBoundaries(app)
+
+def checkBoundaries(app):
     for row in range(app.rows):
         for col in range(app.cols):
             if app.cellColors[row][col] == 'green':
                 rectLeftX, rectTopY = getCellLeftTop(app, row, col)
                 rectWidth, rectHeight = getCellSize(app)
-                if checkCollisions(app.player, rectLeftX, rectTopY, rectWidth, rectHeight):
-                    app.player.cy -= app.player.dy * app.movementCoefficient
-                    app.player.cx -= app.player.dx * app.movementCoefficient
-                    collisionFound = True
+                isColliding = checkCollisions(app.player, rectLeftX, rectTopY, rectWidth, rectHeight)
+                if isColliding:
+                    if rectLeftX - app.player.r < app.player.cx < rectLeftX + rectWidth + app.player.r:
+                        app.player.cy -= app.player.dy * app.movementCoefficient
                     break
-        if collisionFound == True:
-            break
+    app.player.cx += app.player.dx * app.movementCoefficient
+    for row in range(app.rows):
+        for col in range(app.cols):
+            if app.cellColors[row][col] == 'green':
+                rectLeftX, rectTopY = getCellLeftTop(app, row, col)
+                rectWidth, rectHeight = getCellSize(app)
+                isColliding = checkCollisions(app.player, rectLeftX, rectTopY, rectWidth, rectHeight)
+                if isColliding:
+                    if rectTopY - app.player.r < app.player.cy <= rectTopY + rectWidth + app.player.r:
+                        app.player.cx -= app.player.dx * app.movementCoefficient
+                    break
 
 def drawBoard(app):
     for row in range(app.rows):
@@ -186,13 +195,25 @@ def checkCollisions(player, rectLeftX, rectTopY, rectWidth, rectHeight):
                     (rectLeftX - circleRadius, rectTopY + rectHeight),
                     (rectLeftX - circleRadius, rectTopY)]
     circleCenterX, circleCenterY = player.cx, player.cy
-    #Check top portion collisions
-
-    #Check middle portion collisions
-    if (shapeCorners[7][0] <= circleCenterX <= shapeCorners[2][0]
-        and rectTopY <= circleCenterY <= rectTopY + rectHeight):
+    #Check corner collisions
+    for cornerX, cornerY in [(rectLeftX, rectTopY),(rectLeftX + rectWidth, rectTopY),
+                             (rectLeftX, rectTopY+rectHeight),
+                             (rectLeftX+rectWidth, rectTopY+rectHeight),]:
+        if distance(cornerX, cornerY, circleCenterX, circleCenterY) <= circleRadius:
+            return True
+    #Check left/right portion collisions
+    if (rectTopY <= circleCenterY <= rectTopY + rectHeight
+        and shapeCorners[7][0] <= circleCenterX <= shapeCorners[2][0]):
+        return True
+    #Check up/down portion collisions
+    if (rectLeftX <= circleCenterX <= rectLeftX + rectWidth
+        and shapeCorners[1][1] <= circleCenterY <= shapeCorners[5][1]):
         return True
     return False
+
+def distance(x1, y1, x2, y2):
+    return ((x1-x2)**2 + (y1-y2)**2)**0.5
+
 def main():
     runApp()
     
