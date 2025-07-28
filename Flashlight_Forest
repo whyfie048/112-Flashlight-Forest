@@ -154,6 +154,7 @@ def map_drawCell(app, row, col):
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
              fill=app.cellColors[row][col])
 
+#uses different grid to draw than map
 def flashlight_drawCell(app, row, col): 
     cellLeft, cellTop = getCellLeftTop(app, row, col)
     cellWidth, cellHeight = getCellSize(app)
@@ -208,7 +209,6 @@ def createDungeon(grid):
         randomDir = 'vertical'
     else:
         randomDir = 'None'
-    
     if randomDir == 'None': #basecase
         return grid
     else: #recursivecase
@@ -248,6 +248,9 @@ def createDungeon(grid):
         return grid
 
 #Concept from: https://gamedev.stackexchange.com/questions/179635/circle-square-collision-detection-simple-formula
+#Idea is to find out how far the center of the circle can be from the square (radius length),
+#Then to check if the center is within that distance
+#Code is all original
 def checkCollisions(circleCenterX, circleCenterY, circleRadius,
                      rectLeftX, rectTopY, rectWidth, rectHeight):
     #Check corner collisions
@@ -270,10 +273,15 @@ def checkCollisions(circleCenterX, circleCenterY, circleRadius,
         return True
     return False
 
+#Used in the above function
+def distance(x1, y1, x2, y2):
+    return ((x1-x2)**2 + (y1-y2)**2)**0.5
+
 def checkBoundaries(app, x, y):
     #Double for-loops allow for sliding along walls
     cellRowNum, cellColNum = getCell(app, x, y)
     app.player.cy += app.player.dy * app.movementCoefficient
+    #Loops through all cells in a 3x3 square from the point
     for row in range(cellRowNum-1, cellRowNum + 2):
         for col in range(cellColNum-1, cellColNum + 2):
             rectLeftX, rectTopY = getCellLeftTop(app, row, col)
@@ -346,9 +354,6 @@ def generateTreasure(app, num):
                not (boxRow == app.rows//2 and boxCol == app.cols//2)):
             boxCol, boxRow = random.randint(0, app.cols-1), random.randint(0, app.rows-1)
         app.cellColors[boxRow][boxCol] = 'cyan'
-
-def distance(x1, y1, x2, y2):
-    return ((x1-x2)**2 + (y1-y2)**2)**0.5
 
 def main():
     runAppWithScreens(initialScreen='map')
