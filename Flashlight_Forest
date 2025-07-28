@@ -49,7 +49,7 @@ def resetFlashlight(app):
 def map_redrawAll(app):
     #Draw the board
     drawLabel('Flashlight Forest', 200, 20, bold = True, size = 16)
-    drawLabel('Use WASD keys to move, and arrow keys to turn the flashlight', 200, 36)
+    drawLabel('Use WASD keys to move, and arrow keys to rotate the flashlight', 200, 36)
     drawLabel(f'''m: map mode   f: flashlight mode   Treasures Collected: {app.score}/{app.treasures}''',
                200, 50)    
     drawLabel('Press r to reset', 200, 64)
@@ -64,7 +64,7 @@ def map_redrawAll(app):
 def flashlight_redrawAll(app):
     #Draw the board
     drawLabel('Flashlight Forest', 200, 20, bold = True, size = 16)
-    drawLabel('Use WASD keys to move, and arrow keys to turn the flashlight', 200, 36)
+    drawLabel('Use WASD keys to move, and arrow keys to rotate the flashlight', 200, 36)
     drawLabel(f'''m: map mode   f: flashlight mode   Treasures Collected: {app.score}/{app.treasures}''',
                200, 50)    
     drawLabel('Press r to reset', 200, 64)
@@ -260,13 +260,13 @@ def checkCollisions(circleCenterX, circleCenterY, circleRadius,
 
     #Check left/right portion collisions
     minX, maxX = rectLeftX - circleRadius, rectLeftX + rectWidth + circleRadius
-    if (rectTopY <= circleCenterY <= rectTopY + rectHeight
-        and minX <= circleCenterX <= maxX):
+    if (rectTopY < circleCenterY < rectTopY + rectHeight
+        and minX < circleCenterX < maxX):
         return True
     #Check up/down portion collisions
     minY, maxY = rectTopY - circleRadius, rectTopY + rectHeight + circleRadius
-    if (rectLeftX <= circleCenterX <= rectLeftX + rectWidth
-        and minY <= circleCenterY <= maxY):
+    if (rectLeftX < circleCenterX < rectLeftX + rectWidth
+        and minY < circleCenterY < maxY):
         return True
     return False
 
