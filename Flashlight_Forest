@@ -21,7 +21,7 @@ def onAppStart(app):
     app.boardTop = 75
     app.boardWidth = 300
     app.boardHeight = 300
-    app.maxRayLength = 100
+    app.maxRayLength = 150
     app.treasures = 5
     resetBoard(app)
     resetFlashlight(app)
@@ -124,7 +124,6 @@ def flashlight_onKeyRelease(app, key):
 
 def map_onStep(app):
     #Move the player
-    app.player.cy += app.player.dy * app.movementCoefficient
     checkBoundaries(app, app.player.cx, app.player.cy)
     if app.score == app.treasures:
         app.win = True
@@ -258,6 +257,7 @@ def checkCollisions(circleCenterX, circleCenterY, circleRadius,
     for cornerX, cornerY in rectCorners:
         if distance(cornerX, cornerY, circleCenterX, circleCenterY) <= circleRadius:
             return True
+
     #Check left/right portion collisions
     minX, maxX = rectLeftX - circleRadius, rectLeftX + rectWidth + circleRadius
     if (rectTopY <= circleCenterY <= rectTopY + rectHeight
@@ -273,24 +273,22 @@ def checkCollisions(circleCenterX, circleCenterY, circleRadius,
 def checkBoundaries(app, x, y):
     #Double for-loops allow for sliding along walls
     cellRowNum, cellColNum = getCell(app, x, y)
+    app.player.cy += app.player.dy * app.movementCoefficient
     for row in range(cellRowNum-1, cellRowNum + 2):
         for col in range(cellColNum-1, cellColNum + 2):
             rectLeftX, rectTopY = getCellLeftTop(app, row, col)
             rectWidth, rectHeight = getCellSize(app)
             isColliding = checkCollisions(app.player.cx, app.player.cy, app.player.r,
                                             rectLeftX, rectTopY, rectWidth, rectHeight)
-            if app.cellColors[row][col] != None and isColliding:
 
-                if app.cellColors[row][col] == 'green':    
-                    if rectLeftX - app.player.r < app.player.cx < rectLeftX + rectWidth + app.player.r:
-                        while checkCollisions(app.player.cx, app.player.cy, app.player.r,
+            if app.cellColors[row][col] != None and isColliding:
+                if app.cellColors[row][col] == 'green':
+                    while checkCollisions(app.player.cx, app.player.cy, app.player.r,
                                             rectLeftX, rectTopY, rectWidth, rectHeight):
-                            app.player.cy -= app.player.dy
-                    break
+                        app.player.cy -= app.player.dy
                 else:
                     app.cellColors[row][col] = None
                     app.score += 1
-                    break
             
     app.player.cx += app.player.dx * app.movementCoefficient
     for row in range(app.rows):
@@ -301,16 +299,12 @@ def checkBoundaries(app, x, y):
                                             rectLeftX, rectTopY, rectWidth, rectHeight)
             if app.cellColors[row][col] != None and isColliding:
                 if app.cellColors[row][col] == 'green':
-                    if (rectTopY - app.player.r < app.player.cy <= 
-                        rectTopY + rectWidth + app.player.r):
-                        while checkCollisions(app.player.cx, app.player.cy, app.player.r,
+                    while checkCollisions(app.player.cx, app.player.cy, app.player.r,
                                             rectLeftX, rectTopY, rectWidth, rectHeight):
-                            app.player.cx -= app.player.dx
-                    break
+                        app.player.cx -= app.player.dx
                 else:
                     app.cellColors[row][col] = None
                     app.score += 1
-                    break
 
 #Raytracing stuff: https://lodev.org/cgtutor/raycasting.html
 def traceLinePoints(app, maxLength, angle):
@@ -351,7 +345,7 @@ def generateTreasure(app, num):
         while (app.cellColors[boxRow][boxCol] != None and 
                not (boxRow == app.rows//2 and boxCol == app.cols//2)):
             boxCol, boxRow = random.randint(0, app.cols-1), random.randint(0, app.rows-1)
-        app.cellColors[boxRow][boxCol] = 'blue'
+        app.cellColors[boxRow][boxCol] = 'cyan'
 
 def distance(x1, y1, x2, y2):
     return ((x1-x2)**2 + (y1-y2)**2)**0.5
