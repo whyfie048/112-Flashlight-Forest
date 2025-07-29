@@ -12,7 +12,24 @@ class moveableCharacter():
         self.dx = dx
         self.dy = dy
         self.r = r
-        
+
+class label():
+    def __init__(self, leftX, topY, width, height, text):
+        self.leftX = leftX
+        self.topY = topY
+        self.width = width
+        self.height = height
+        self.text = text
+
+    def drawLabel(self):
+        drawRect(self.leftX, self.topY, self.width, self.height, fill = None, border = 'black')
+        drawLabel(self.text, self.leftX + self.width / 2, self.topY + self.height / 2)
+
+    def labelIsClicked(self, x, y):
+        if self.leftX <= x <= self.leftX + self.width and self.topY <= y <= self.topY + self.height:
+            return True
+        return False
+
 def onAppStart(app):
     #Board variables
     app.rows = 19
@@ -21,10 +38,20 @@ def onAppStart(app):
     app.boardTop = 75
     app.boardWidth = 300
     app.boardHeight = 300
-
     app.treasures = 5
+    app.startLabel = label(150, 175, 100, 50, "Start")
     resetBoard(app)
     resetFlashlight(app)
+
+def start_redrawAll(app):
+    drawLabel('Flashlight Forest', 200, 20, bold = True, size = 16)
+    drawLabel('Use WASD keys to move, arrow keys to rotate, q and e to zoom', 200, 36)
+    app.startLabel.drawLabel()
+
+def start_onMousePress(app, mx, my):
+    if app.startLabel.labelIsClicked(mx, my):
+        setActiveScreen('map')
+
 
 def resetBoard(app):
     #Player variables
@@ -50,8 +77,6 @@ def resetFlashlight(app):
 
 def map_redrawAll(app):
     #Draw the board
-    drawLabel('Flashlight Forest', 200, 20, bold = True, size = 16)
-    drawLabel('Use WASD keys to move, arrow keys to rotate, q and e to zoom', 200, 36)
     drawLabel(f'''m: map mode   f: flashlight mode   Treasures Collected: {app.score}/{app.treasures}''',
                200, 50)    
     drawLabel('Press r to reset, i to go first-person', 200, 64)
@@ -66,7 +91,7 @@ def map_redrawAll(app):
 def flashlight_redrawAll(app):
     #Draw the board
     drawLabel('Flashlight Forest', 200, 20, bold = True, size = 16)
-    drawLabel('Use WASD keys to move, and arrow keys to rotate the flashlight', 200, 36)
+    drawLabel('Use up and down arrow to move, left and right to turn', 200, 36)
     drawLabel(f'''m: map mode   f: flashlight mode   Treasures Collected: {app.score}/{app.treasures}''',
                200, 50)    
     drawLabel('Press r to reset, i to go first person', 200, 64)
@@ -109,7 +134,8 @@ def firstPerson_onKeyPress(app, key):
     map_onKeyPress(app, key)
         
 def map_onKeyHold(app, key):
-    if 'right' in key:
+    #board based movement
+    '''if 'right' in key:
         app.facingAngle += 10
     if 'left' in key:
         app.facingAngle -= 10
@@ -130,25 +156,45 @@ def map_onKeyHold(app, key):
         app.arcLength -= 10
     if 'e' in key and app.arcLength < 90:
         app.maxRayLength -= 10
-        app.arcLength += 10
+        app.arcLength += 10'''
+    firstPerson_onKeyHold(app, key)
+
 
 def flashlight_onKeyHold(app, key):
     map_onKeyHold(app, key)
 
 def firstPerson_onKeyHold(app, key):
-    map_onKeyHold(app, key) #temporary!
+    #player-centered movement
+    if 'right' in key:
+        app.facingAngle += 20
+    if 'left' in key:
+        app.facingAngle -= 20
+    if 'up' in key:
+        app.player.dy = math.sin(math.radians(app.facingAngle))
+        app.player.dx = math.cos(math.radians(app.facingAngle))
+    if 'down' in key:
+        app.player.dy = -math.sin(math.radians(app.facingAngle))
+        app.player.dx = -math.cos(math.radians(app.facingAngle))
+    if 'up' in key and 'down' in key:
+        app.player.dy = 0
+        app.player.dx = 0
+    if 'q' in key and app.arcLength > 30:
+        app.maxRayLength += 10
+        app.arcLength -= 10
+    if 'e' in key and app.arcLength < 90:
+        app.maxRayLength -= 10
+        app.arcLength += 10
 
 def map_onKeyRelease(app, key):
-    if key == 'w' or key == 's':
-        app.player.dy = 0
-    if key == 'a' or key == 'd':
-        app.player.dx = 0
+    firstPerson_onKeyRelease(app, key)
 
 def flashlight_onKeyRelease(app, key):
     map_onKeyRelease(app, key)
 
 def firstPerson_onKeyRelease(app, key):
-    map_onKeyRelease(app, key) #temporary!
+    if key == 'up' or key == 'down':
+        app.player.dy = 0
+        app.player.dx = 0
 
 def map_onStep(app):
     #Move the player
@@ -392,6 +438,6 @@ def generateTreasure(app, num):
         app.cellColors[boxRow][boxCol] = 'cyan'
 
 def main():
-    runAppWithScreens(initialScreen='map')
+    runAppWithScreens(initialScreen='start')
     
 main()
