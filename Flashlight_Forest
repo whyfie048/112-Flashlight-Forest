@@ -15,8 +15,8 @@ class moveableCharacter():
         
 def onAppStart(app):
     #Board variables
-    app.rows = 20
-    app.cols = 20
+    app.rows = 19
+    app.cols = 19
     app.boardLeft = 50
     app.boardTop = 75
     app.boardWidth = 300
@@ -38,7 +38,7 @@ def resetBoard(app):
     app.win = False
     #Create board
     app.cellColors = [[None for col in range(app.cols)] for row in range(app.rows)]
-    app.startingAngle = -120
+    app.facingAngle = -90
     fillBorders(app)
     fillBoard(app)
     generateTreasure(app, app.treasures)
@@ -54,7 +54,7 @@ def map_redrawAll(app):
     drawLabel('Use WASD keys to move, arrow keys to rotate, q and e to zoom', 200, 36)
     drawLabel(f'''m: map mode   f: flashlight mode   Treasures Collected: {app.score}/{app.treasures}''',
                200, 50)    
-    drawLabel('Press r to reset', 200, 64)
+    drawLabel('Press r to reset, i to go first-person', 200, 64)
     if not app.win:
         map_drawBoard(app)
         #Draw the player
@@ -69,15 +69,25 @@ def flashlight_redrawAll(app):
     drawLabel('Use WASD keys to move, and arrow keys to rotate the flashlight', 200, 36)
     drawLabel(f'''m: map mode   f: flashlight mode   Treasures Collected: {app.score}/{app.treasures}''',
                200, 50)    
-    drawLabel('Press r to reset', 200, 64)
+    drawLabel('Press r to reset, i to go first person', 200, 64)
     if not app.win:
         drawRect(app.boardLeft, app.boardTop, app.boardWidth, app.boardHeight, fill = 'black')
         #Draw the player
         drawLabel('v',app.player.cx, app.player.cy, size = app.player.r * 4,
-                fill = 'white', rotateAngle = app.startingAngle + 300)
+                fill = 'white', rotateAngle = app.facingAngle - 90)
         drawFlashlight(app, app.maxRayLength, app.arcLength)
         #Fill board
         flashlight_drawBoard(app)
+    else:
+        drawLabel('You Won!', 200, 200, size = 30, fill = 'red')
+
+#Colors: https://matplotlib.org/stable/gallery/color/named_colors.html
+def firstPerson_redrawAll(app):
+    if not app.win:
+        drawRect(0, 0, app.width, app.height, fill = gradient('white', 'gray', 'black', start = 'center'))
+        drawRect(0, app.height  / 2, app.width, app.height / 2, 
+             fill = 'saddleBrown')
+        draw3D(app, app.maxRayLength, app.arcLength)
     else:
         drawLabel('You Won!', 200, 200, size = 30, fill = 'red')
     
@@ -89,17 +99,20 @@ def map_onKeyPress(app, key):
         setActiveScreen('flashlight')
     if key == 'm':
         setActiveScreen('map')
-
+    if key == 'i':
+        setActiveScreen('firstPerson')
 
 def flashlight_onKeyPress(app, key):
     map_onKeyPress(app, key)
-        
 
+def firstPerson_onKeyPress(app, key):
+    map_onKeyPress(app, key)
+        
 def map_onKeyHold(app, key):
     if 'right' in key:
-        app.startingAngle += 10
+        app.facingAngle += 10
     if 'left' in key:
-        app.startingAngle -= 10
+        app.facingAngle -= 10
     if 'w' in key:
         app.player.dy = -1
     if 's' in key:
@@ -113,15 +126,17 @@ def map_onKeyHold(app, key):
     if 'a' in key and 'd' in key:
         app.player.dx = 0
     if 'q' in key and app.arcLength > 30:
-        app.maxRayLength += 5
+        app.maxRayLength += 10
         app.arcLength -= 10
     if 'e' in key and app.arcLength < 90:
-        app.maxRayLength -= 5
+        app.maxRayLength -= 10
         app.arcLength += 10
-
 
 def flashlight_onKeyHold(app, key):
     map_onKeyHold(app, key)
+
+def firstPerson_onKeyHold(app, key):
+    map_onKeyHold(app, key) #temporary!
 
 def map_onKeyRelease(app, key):
     if key == 'w' or key == 's':
@@ -132,6 +147,9 @@ def map_onKeyRelease(app, key):
 def flashlight_onKeyRelease(app, key):
     map_onKeyRelease(app, key)
 
+def firstPerson_onKeyRelease(app, key):
+    map_onKeyRelease(app, key) #temporary!
+
 def map_onStep(app):
     #Move the player
     checkBoundaries(app, app.player.cx, app.player.cy)
@@ -141,6 +159,9 @@ def map_onStep(app):
 def flashlight_onStep(app):
     map_onStep(app)
     editFlashlightBoard(app, app.maxRayLength, app.arcLength)
+
+def firstPerson_onStep(app):
+    map_onStep(app)
 
 def map_drawBoard(app):
     for row in range(app.rows):
@@ -332,24 +353,35 @@ def traceLinePoints(app, maxLength, angle):
     return incrementingX, incrementingY, cellRow, cellCol
 
 def drawAllRays(app, maxLength, totalAngle):
-    for angle in range(0, totalAngle, totalAngle // 30):
-        newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.startingAngle)
+    for angle in range(0-totalAngle//2, totalAngle//2, totalAngle // 30):
+        newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.facingAngle)
         drawLine(newPointX, newPointY, app.player.cx, app.player.cy, fill = 'red', lineWidth = 0.25)
 
 def editFlashlightBoard(app, maxLength, totalAngle):
     resetFlashlight(app)
-    for angle in range(0, totalAngle, totalAngle // 30):
-        newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.startingAngle)
+    for angle in range(0-totalAngle//2, totalAngle//2, totalAngle // 30):
+        newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.facingAngle)
         if app.cellColors[cellRow][cellCol] != None:
             app.flashlightColors[cellRow][cellCol] = app.cellColors[cellRow][cellCol]
 
 def drawFlashlight(app, maxLength, totalAngle):
     coords = [app.player.cx, app.player.cy]
-    for angle in range(0, totalAngle, totalAngle // 30):
-        newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.startingAngle)
+    for angle in range(0-totalAngle//2, totalAngle//2, totalAngle // 30):
+        newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.facingAngle)
         coords.append(newPointX)
         coords.append(newPointY)
     drawPolygon(*coords, fill = 'yellow')
+
+def draw3D(app, maxLength, totalAngle):
+    for angle in range(0-totalAngle//2, totalAngle//2, totalAngle // 30):
+        newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.facingAngle)
+        sideLength = (distance(newPointX, newPointY, app.player.cx, app.player.cy) ** (-1)) * 600
+        angleRatio = ((angle + (totalAngle / 2)) / (totalAngle / 2))
+        xCoord = (angleRatio) / 2 * app.width
+        fogCoefficient = sideLength if sideLength < 100 else 100
+        sideWidth = app.width / 30 if sideLength < app.width / 30 else sideLength
+        drawRect(xCoord, app.height / 2, sideWidth, sideLength, opacity = fogCoefficient,
+                    fill = app.cellColors[cellRow][cellCol], align = 'center')
 
 def generateTreasure(app, num):
     for box in range(num):
