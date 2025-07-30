@@ -14,44 +14,117 @@ class moveableCharacter():
         self.r = r
 
 class label():
-    def __init__(self, leftX, topY, width, height, text):
+    def __init__(self, leftX, topY, width, height, text, shouldFill):
         self.leftX = leftX
         self.topY = topY
         self.width = width
         self.height = height
         self.text = text
+        self.shouldFill = shouldFill
 
-    def drawLabel(self):
-        drawRect(self.leftX, self.topY, self.width, self.height, fill = None, border = 'black')
+    def drawLabel(self, color):
+        if self.shouldFill:
+            drawRect(self.leftX, self.topY, self.width, self.height, fill = color, border = 'black')
+        else:
+            drawRect(self.leftX, self.topY, self.width, self.height, fill = None, border = 'black')
         drawLabel(self.text, self.leftX + self.width / 2, self.topY + self.height / 2)
 
-    def labelIsClicked(self, x, y):
+    def pointInLabel(self, x, y):
         if self.leftX <= x <= self.leftX + self.width and self.topY <= y <= self.topY + self.height:
             return True
         return False
 
 def onAppStart(app):
     #Board variables
-    app.rows = 19
+    app.rows = 20
     app.cols = 19
     app.boardLeft = 50
     app.boardTop = 75
     app.boardWidth = 300
     app.boardHeight = 300
     app.treasures = 5
-    app.startLabel = label(150, 175, 100, 50, "Start")
+    app.gameMode = 'firstPerson'
+    app.startButton = label(150, 175, 100, 50, "Start", False)
+    app.instructionsButton = label(150, 235, 100, 50, "Instructions", False)
+    app.gameModesButton = label(150, 295, 100, 50, "Game Modes", False)
+    app.backButton = label(20, 20, 70, 20, "< Back", False)
+    app.mapModeButton = label(150, 175, 100, 50, "Map Mode", False)
+    app.flashlightModeButton = label(150, 235, 100, 50, "Flashlight Mode", False)
+    app.firstPersonButton = label(150, 295, 100, 50, "First Person Mode", False)
+    app.startButtonsList = [app.startButton, app.instructionsButton, app.gameModesButton]
+    app.gameModeButtons = [app.mapModeButton, app.flashlightModeButton, app.firstPersonButton]
+    app.allButtonsList = app.startButtonsList + [app.backButton] + app.gameModeButtons
+
+    #app.controlsButton = label()
+    #app.backButton = label()
     resetBoard(app)
     resetFlashlight(app)
 
+#Start Menu stuff
 def start_redrawAll(app):
-    drawLabel('Flashlight Forest', 200, 20, bold = True, size = 16)
-    drawLabel('Use WASD keys to move, arrow keys to rotate, q and e to zoom', 200, 36)
-    app.startLabel.drawLabel()
+    drawLabel('Flashlight Forest', 200, 50, bold = True, size = 16)
+    drawLabel(app.gameMode + ' mode', 200, 75)
+    for button in app.startButtonsList:
+        button.drawLabel('gray')
+
+def instructions_redrawAll(app):
+    drawLabel('Use up and down arrow keys to move, left and right arrow keys to rotate', 200, 100)
+    drawLabel('Use q and e to zoom in/out', 200, 116)
+    drawLabel(f'''m: map mode   f: flashlight mode''', 200, 68)    
+    drawLabel('Press r to reset, i to go first-person', 200, 84)
+    app.backButton.drawLabel('gray')
+
+def gameModes_redrawAll(app):
+    drawLabel('Choose your game mode', 200, 50)
+    for button in app.gameModeButtons:
+        button.drawLabel('gray')
+    app.backButton.drawLabel('gray')
 
 def start_onMousePress(app, mx, my):
-    if app.startLabel.labelIsClicked(mx, my):
-        setActiveScreen('map')
+    if app.startButton.pointInLabel(mx, my):
+        setActiveScreen(app.gameMode)
+    if app.instructionsButton.pointInLabel(mx, my):
+        setActiveScreen('instructions')
+    if app.gameModesButton.pointInLabel(mx, my):
+        setActiveScreen('gameModes')
 
+def start_onMouseMove(app, mx, my):
+    for button in app.allButtonsList:
+        if button.pointInLabel(mx, my):
+            button.shouldFill = True
+        else:
+            button.shouldFill = False
+
+def instructions_onMousePress(app, mx, my):
+    if app.backButton.pointInLabel(mx, my):
+        setActiveScreen('start')
+
+def gameModes_onMousePress(app, mx, my):
+    instructions_onMousePress(app, mx, my)
+    if app.mapModeButton.pointInLabel(mx, my):
+        app.gameMode = 'map'
+        setActiveScreen('start')
+    if app.firstPersonButton.pointInLabel(mx, my):
+        app.gameMode = 'firstPerson'
+        setActiveScreen('start')
+    if app.flashlightModeButton.pointInLabel(mx, my):
+        app.gameMode = 'flashlight'
+        setActiveScreen('start')
+
+def instructions_onMouseMove(app, mx, my):
+    start_onMouseMove(app, mx, my)
+
+def gameModes_onMouseMove(app, mx, my):
+    start_onMouseMove(app, mx, my)
+
+def start_onStep(app):
+    pass
+
+def instructions_onStep(app):
+    pass
+
+def gameModes_onStep(app):
+    pass
 
 def resetBoard(app):
     #Player variables
@@ -77,25 +150,21 @@ def resetFlashlight(app):
 
 def map_redrawAll(app):
     #Draw the board
-    drawLabel(f'''m: map mode   f: flashlight mode   Treasures Collected: {app.score}/{app.treasures}''',
-               200, 50)    
-    drawLabel('Press r to reset, i to go first-person', 200, 64)
     if not app.win:
+        drawProgressBar(app)
+        drawLabel(f'Treasures Collected: {app.score}/{app.treasures}', 200, 40)
         map_drawBoard(app)
         #Draw the player
         drawCircle(app.player.cx, app.player.cy, app.player.r, fill = 'white', border = 'black')
         drawAllRays(app, app.maxRayLength, app.arcLength)
     else:
-        drawLabel('You Won!', 200, 200, fill = 'red', size = 30)
+        drawWinMessage(app)
 
 def flashlight_redrawAll(app):
     #Draw the board
-    drawLabel('Flashlight Forest', 200, 20, bold = True, size = 16)
-    drawLabel('Use up and down arrow to move, left and right to turn', 200, 36)
-    drawLabel(f'''m: map mode   f: flashlight mode   Treasures Collected: {app.score}/{app.treasures}''',
-               200, 50)    
-    drawLabel('Press r to reset, i to go first person', 200, 64)
     if not app.win:
+        drawProgressBar(app)
+        drawLabel(f'Treasures Collected: {app.score}/{app.treasures}', 200, 40)
         drawRect(app.boardLeft, app.boardTop, app.boardWidth, app.boardHeight, fill = 'black')
         #Draw the player
         drawLabel('v',app.player.cx, app.player.cy, size = app.player.r * 4,
@@ -104,17 +173,24 @@ def flashlight_redrawAll(app):
         #Fill board
         flashlight_drawBoard(app)
     else:
-        drawLabel('You Won!', 200, 200, size = 30, fill = 'red')
+        drawWinMessage(app)
 
 #Colors: https://matplotlib.org/stable/gallery/color/named_colors.html
 def firstPerson_redrawAll(app):
     if not app.win:
+        #draw background
         drawRect(0, 0, app.width, app.height, fill = gradient('white', 'gray', 'black', start = 'center'))
         drawRect(0, app.height  / 2, app.width, app.height / 2, 
              fill = 'saddleBrown')
+        #draw walls
         draw3D(app, app.maxRayLength, app.arcLength)
+        drawProgressBar(app)
+        #draw compass
+        drawCircle(370, 30, 20, fill = 'white')
+        drawLabel('v', 370, 30, size = app.player.r * 4,
+                fill = 'red', rotateAngle = app.facingAngle - 90)
     else:
-        drawLabel('You Won!', 200, 200, size = 30, fill = 'red')
+        drawWinMessage(app)
     
 
 def map_onKeyPress(app, key):
@@ -126,6 +202,8 @@ def map_onKeyPress(app, key):
         setActiveScreen('map')
     if key == 'i':
         setActiveScreen('firstPerson')
+    if key == 's':
+        setActiveScreen('start')
 
 def flashlight_onKeyPress(app, key):
     map_onKeyPress(app, key)
@@ -134,7 +212,7 @@ def firstPerson_onKeyPress(app, key):
     map_onKeyPress(app, key)
         
 def map_onKeyHold(app, key):
-    #board based movement
+    #board based movement, older code
     '''if 'right' in key:
         app.facingAngle += 10
     if 'left' in key:
@@ -251,7 +329,7 @@ def getCellSize(app):
 
 def fillBoard(app):
     gridCenter = []
-    #finding center of board excluding the border
+    #finding center of board excluding the border cells
     for row in range(1, app.rows - 1):
         gridCenter += [app.cellColors[row][1:-1]]
     #remake the board with the newly created dungeon
@@ -424,9 +502,8 @@ def draw3D(app, maxLength, totalAngle):
         sideLength = (distance(newPointX, newPointY, app.player.cx, app.player.cy) ** (-1)) * 600
         angleRatio = ((angle + (totalAngle / 2)) / (totalAngle / 2))
         xCoord = (angleRatio) / 2 * app.width
-        fogCoefficient = sideLength if sideLength < 100 else 100
         sideWidth = app.width / 30 if sideLength < app.width / 30 else sideLength
-        drawRect(xCoord, app.height / 2, sideWidth, sideLength, opacity = fogCoefficient,
+        drawRect(xCoord, app.height / 2, sideWidth, sideLength,
                     fill = app.cellColors[cellRow][cellCol], align = 'center')
 
 def generateTreasure(app, num):
@@ -437,6 +514,16 @@ def generateTreasure(app, num):
             boxCol, boxRow = random.randint(0, app.cols-1), random.randint(0, app.rows-1)
         app.cellColors[boxRow][boxCol] = 'cyan'
 
+def drawProgressBar(app):
+    for emptySpot in range(app.treasures):
+        drawRect(200-(20 * app.treasures / 2)+ (20 * emptySpot), 50, 20, 20, fill = None, border = 'black')
+    for barPercent in range(app.score):
+        drawRect(200-(20 * app.treasures / 2)+ (20 * barPercent), 50, 20, 20, fill = 'cyan', border = 'black')
+
+def drawWinMessage(app):
+    drawLabel('You Won!', 200, 180, size = 30, fill = 'red')
+    drawLabel('Press "s" to go back to the start menu', 200, 230, size = 20, fill = 'red')
+    
 def main():
     runAppWithScreens(initialScreen='start')
     
