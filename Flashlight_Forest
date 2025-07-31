@@ -44,6 +44,12 @@ def onAppStart(app):
     app.boardHeight = 300
     app.treasures = 5
     app.gameMode = 'firstPerson'
+    resetBoard(app)
+    resetFlashlight(app)
+    createButtons(app)
+
+#Start Menu stuff
+def createButtons(app):
     app.startButton = label(150, 175, 100, 50, "Start", False)
     app.instructionsButton = label(150, 235, 100, 50, "Instructions", False)
     app.gameModesButton = label(150, 295, 100, 50, "Game Modes", False)
@@ -55,15 +61,13 @@ def onAppStart(app):
     app.gameModeButtons = [app.mapModeButton, app.flashlightModeButton, app.firstPersonButton]
     app.allButtonsList = app.startButtonsList + [app.backButton] + app.gameModeButtons
 
-    #app.controlsButton = label()
-    #app.backButton = label()
-    resetBoard(app)
-    resetFlashlight(app)
 
-#Start Menu stuff
 def start_redrawAll(app):
     drawLabel('Flashlight Forest', 200, 50, bold = True, size = 16)
-    drawLabel(app.gameMode + ' mode', 200, 75)
+    if app.gameMode == 'firstPerson':
+        drawLabel('first person mode', 200, 75)
+    else:
+        drawLabel(app.gameMode + ' mode', 200, 75)
     for button in app.startButtonsList:
         button.drawLabel('gray')
 
@@ -126,6 +130,7 @@ def instructions_onStep(app):
 def gameModes_onStep(app):
     pass
 
+#Board creation
 def resetBoard(app):
     #Player variables
     cellWidth, cellHeight = getCellSize(app)
@@ -192,7 +197,7 @@ def firstPerson_redrawAll(app):
     else:
         drawWinMessage(app)
     
-
+#Controls
 def map_onKeyPress(app, key):
     if key == 'r':
         resetBoard(app)
@@ -204,6 +209,7 @@ def map_onKeyPress(app, key):
         setActiveScreen('firstPerson')
     if key == 's':
         setActiveScreen('start')
+        resetBoard(app)
 
 def flashlight_onKeyPress(app, key):
     map_onKeyPress(app, key)
@@ -277,6 +283,7 @@ def firstPerson_onKeyRelease(app, key):
 def map_onStep(app):
     #Move the player
     checkBoundaries(app, app.player.cx, app.player.cy)
+    #check if objective is met
     if app.score == app.treasures:
         app.win = True
 
@@ -287,6 +294,7 @@ def flashlight_onStep(app):
 def firstPerson_onStep(app):
     map_onStep(app)
 
+#CS academy grid functions
 def map_drawBoard(app):
     for row in range(app.rows):
         for col in range(app.cols):
@@ -303,7 +311,7 @@ def map_drawCell(app, row, col):
     drawRect(cellLeft, cellTop, cellWidth, cellHeight,
              fill=app.cellColors[row][col])
 
-#uses different grid to draw than map
+#flashlight uses different grid to draw than map
 def flashlight_drawCell(app, row, col): 
     cellLeft, cellTop = getCellLeftTop(app, row, col)
     cellWidth, cellHeight = getCellSize(app)
@@ -327,6 +335,7 @@ def getCellSize(app):
     cellHeight = app.boardHeight / app.rows
     return (cellWidth, cellHeight)
 
+#used together with recursion generation to make it more consistent (map)
 def fillBoard(app):
     gridCenter = []
     #finding center of board excluding the border cells
@@ -426,6 +435,7 @@ def checkCollisions(circleCenterX, circleCenterY, circleRadius,
 def distance(x1, y1, x2, y2):
     return ((x1-x2)**2 + (y1-y2)**2)**0.5
 
+#checks for player collisions, revert movement if wall, erase if collectable object
 def checkBoundaries(app, x, y):
     #Double for-loops allow for sliding along walls
     cellRowNum, cellColNum = getCell(app, x, y)
@@ -476,6 +486,7 @@ def traceLinePoints(app, maxLength, angle):
     
     return incrementingX, incrementingY, cellRow, cellCol
 
+#some variables are unused so one function can work for all of these
 def drawAllRays(app, maxLength, totalAngle):
     for angle in range(0-totalAngle//2, totalAngle//2, totalAngle // 30):
         newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.facingAngle)
@@ -496,6 +507,7 @@ def drawFlashlight(app, maxLength, totalAngle):
         coords.append(newPointY)
     drawPolygon(*coords, fill = 'yellow')
 
+#draw squares of sizes based on distance for each ray drawn
 def draw3D(app, maxLength, totalAngle):
     for angle in range(0-totalAngle//2, totalAngle//2, totalAngle // 30):
         newPointX, newPointY, cellRow, cellCol = traceLinePoints(app, maxLength, angle + app.facingAngle)
@@ -506,6 +518,7 @@ def draw3D(app, maxLength, totalAngle):
         drawRect(xCoord, app.height / 2, sideWidth, sideLength,
                     fill = app.cellColors[cellRow][cellCol], align = 'center')
 
+#place treasure in an empty cell that's not wall or player spawn
 def generateTreasure(app, num):
     for box in range(num):
         boxCol, boxRow = random.randint(0, app.cols-1), random.randint(0, app.rows-1)
