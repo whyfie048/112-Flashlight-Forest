@@ -346,7 +346,9 @@ def fillBoard(app):
     for row in range(1, app.rows - 1):
         app.cellColors[row] = ([app.cellColors[row][0]] + filledCenter[row - 1]
                                 + [app.cellColors[row][-1]])
+    app.cellColors[app.rows//2 - 1][app.cols//2] = None
     app.cellColors[app.rows//2][app.cols//2] = None
+
 
 def fillBorders(app):
     for edgeRow in [0, app.rows-1]:
